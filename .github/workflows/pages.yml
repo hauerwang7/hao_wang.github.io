@@ -1,0 +1,48 @@
+name: Deploy Jekyll site to Pages
+
+on:
+  push:
+    branches: ["main"] # 如果你的默认分支是 master，请把 main 改成 master
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.3' # 建议使用 3.1 或更新版本
+          bundler-cache: true
+          cache-version: 0
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+      - name: Build with Jekyll
+        uses: actions/jekyll-build-pages@v1
+        with:
+          source: './'
+          destination: './_site'
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+  
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs:-github-pages.link }}
+    runs-on: hub-latest # 请确保写的是 ubuntu-latest，下面修正
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Deploy to GitHub Pages
+        uses: actions/deploy-pages@v4
